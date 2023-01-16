@@ -1,0 +1,2 @@
+nginx-selfsigned.*
+srcs/requirements/mariadb/tools/data/*

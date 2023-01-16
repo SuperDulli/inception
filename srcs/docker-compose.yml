@@ -14,3 +14,19 @@ services:
       - CERTS_
       - CERT_KEY
     command: /bin/sh -c "envsubst < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
+
+  db:
+    image: chelmerd/mariadb:v1
+    build:
+      context: ./requirements/mariadb/
+    volumes:
+      - ./requirements/mariadb/tools/my.cnf:/etc/my.cnf
+      - ./requirements/mariadb/tools/data:/var/data
+    environment:
+      - MYSQL_ROOT_PASSWORD
+      - MYSQL_USER
+      - MYSQL_PASSWORD
+    ports:
+      - 3306:3306
+    # restart: on-failure
+  
