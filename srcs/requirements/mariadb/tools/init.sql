@@ -1,0 +1,6 @@
+CREATE DATABASE IF NOT EXISTS wordpress;
+CREATE USER IF NOT EXISTS 'db_user'@'%' IDENTIFIED BY 'secret';
+GRANT ALL PRIVILEGES ON wordpress.* TO 'db_user'@'%';
+FLUSH PRIVILEGES;
+SET PASSWORD FOR 'root'@'localhost' = PASSWORD('rootsecret');
+FLUSH PRIVILEGES;

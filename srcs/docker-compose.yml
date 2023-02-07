@@ -1,5 +1,4 @@
 version: '3.8'
-
 services:
   web:
     image: chelmerd/nginx:v1
@@ -7,13 +6,20 @@ services:
       context: ./requirements/nginx/
     volumes:
       - ./requirements/nginx/conf:/etc/nginx/nginx.conf.template
+      - wp_data:/var/www/html
+      - ./requirements/wordpress/index.php:/var/www/html/index.php
+    depends_on:
+      - wordpress
+    networks:
+      - backend
     ports:
       - 443:443
     environment:
       - DOMAIN_NAME
       - CERTS_
       - CERT_KEY
-    command: /bin/sh -c "envsubst < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
+    # only replace certain env vars
+    command: /bin/sh -c "envsubst '$$DOMAIN_NAME $$CERTS_ $$CERT_KEY' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
 
   db:
     image: chelmerd/mariadb:v1
@@ -21,12 +27,42 @@ services:
       context: ./requirements/mariadb/
     volumes:
       - ./requirements/mariadb/tools/my.cnf:/etc/my.cnf
-      - ./requirements/mariadb/tools/data:/var/data
+      - ./requirements/mariadb/tools/init.sql:/usr/local/bin/init.sql
+      - db_data:/var/data
+      - ./requirements/mariadb/tools/docker-entrypoint.sh:/usr/local/bin/docker-entrypoint.sh
     environment:
       - MYSQL_ROOT_PASSWORD
       - MYSQL_USER
       - MYSQL_PASSWORD
-    ports:
-      - 3306:3306
+      - WORDPRESS_DB_NAME
+      - TZ
+    networks:
+      - backend
     # restart: on-failure
-  
+
+  wordpress:
+    # image: chelmerd/wordpress-fpm:v1
+    image: wordpress:4.7.1-php7.0-fpm
+    build:
+      context: ./requirements/wordpress
+    depends_on:
+      - db
+    networks:
+      - backend
+    environment:
+      WORDPRESS_DEBUG: 1
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: ${MYSQL_USER}
+      WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
+      WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME}
+    volumes:
+      - ./requirements/wordpress/php-fpm.conf:/usr/local/etc/php-fpm.d/www.conf
+      - wp_data:/var/www/html
+
+volumes:
+  db_data: 
+  wp_data:
+
+networks:
+  backend:
+    driver: bridge
