@@ -1,17 +1,16 @@
 version: '3.8'
 services:
-  web:
+  nginx:
     image: chelmerd/nginx:v1
     build:
       context: ./requirements/nginx/
     volumes:
       - ./requirements/nginx/conf:/etc/nginx/nginx.conf.template
       - wp_data:/var/www/html
-      - ./requirements/wordpress/index.php:/var/www/html/index.php
     depends_on:
       - wordpress
     networks:
-      - backend
+      - inception_network
     ports:
       - 443:443
     environment:
@@ -20,6 +19,7 @@ services:
       - CERT_KEY
     # only replace certain env vars
     command: /bin/sh -c "envsubst '$$DOMAIN_NAME $$CERTS_ $$CERT_KEY' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
+    restart: unless-stopped
 
   db:
     image: chelmerd/mariadb:v1
@@ -29,7 +29,6 @@ services:
       - ./requirements/mariadb/tools/my.cnf:/etc/my.cnf
       - ./requirements/mariadb/tools/init.sql:/usr/local/bin/init.sql
       - db_data:/var/data
-      - ./requirements/mariadb/tools/docker-entrypoint.sh:/usr/local/bin/docker-entrypoint.sh
     environment:
       - MYSQL_ROOT_PASSWORD
       - MYSQL_USER
@@ -37,32 +36,47 @@ services:
       - WORDPRESS_DB_NAME
       - TZ
     networks:
-      - backend
-    # restart: on-failure
+      - inception_network
+    restart: unless-stopped
 
   wordpress:
-    # image: chelmerd/wordpress-fpm:v1
-    image: wordpress:4.7.1-php7.0-fpm
+    image: chelmerd/wordpress-fpm:v1
     build:
       context: ./requirements/wordpress
     depends_on:
       - db
     networks:
-      - backend
+      - inception_network
     environment:
-      WORDPRESS_DEBUG: 1
       WORDPRESS_DB_HOST: db
       WORDPRESS_DB_USER: ${MYSQL_USER}
       WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
       WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME}
+      WORDPRESS_WEBSITE_TITLE: ${WORDPRESS_WEBSITE_TITLE}
+      WORDPRESS_EMAIL: ${WORDPRESS_EMAIL}
+      WORDPRESS_ADMIN: ${WORDPRESS_ADMIN}
+      WORDPRESS_ADMIN_PASSWORD: ${WORDPRESS_ADMIN_PASSWORD}
+      DOMAIN_NAME: ${DOMAIN_NAME}
     volumes:
       - ./requirements/wordpress/php-fpm.conf:/usr/local/etc/php-fpm.d/www.conf
       - wp_data:/var/www/html
+      - ./requirements/wordpress/setup.sh:/usr/local/bin/setup.sh
+    restart: unless-stopped
 
 volumes:
-  db_data: 
+  db_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/chelmerd/data/db
   wp_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/chelmerd/data/wp
 
 networks:
-  backend:
+  inception_network:
     driver: bridge
