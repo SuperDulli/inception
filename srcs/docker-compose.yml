@@ -28,7 +28,7 @@ services:
     volumes:
       - ./requirements/mariadb/tools/my.cnf:/etc/my.cnf
       - ./requirements/mariadb/tools/init.sql:/usr/local/bin/init.sql
-      - db_data:/var/data
+      - db_data:/var/lib/mysql
     environment:
       - MYSQL_ROOT_PASSWORD
       - MYSQL_USER
@@ -37,7 +37,8 @@ services:
       - TZ
     networks:
       - inception_network
-    restart: unless-stopped
+    # restart: unless-stopped
+    # command: /bin/sh -c "chown -R mysql:mysql /var/lib/mysql && /usr/bin/mysqld --user=mysql --init-file=/usr/local/bin/init.sql"
 
   wordpress:
     image: chelmerd/wordpress-fpm:v1
