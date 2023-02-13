@@ -58,8 +58,8 @@ services:
       DOMAIN_NAME: ${DOMAIN_NAME}
     volumes:
       - ./requirements/wordpress/php-fpm.conf:/usr/local/etc/php-fpm.d/www.conf
-      - wp_data:/var/www/html
       - ./requirements/wordpress/setup.sh:/usr/local/bin/setup.sh
+      - wp_data:/var/www/html
     restart: unless-stopped
 
 volumes:
