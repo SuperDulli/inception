@@ -1,8 +1,6 @@
 #!/bin/sh
 WP_CLI="wp-cli --allow-root"
 
-$WP_CLI core download
-
 echo configure wordpress...
 rm -f wp-config
 $WP_CLI core config \

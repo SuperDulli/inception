@@ -9,9 +9,10 @@ RUN apk update && apk add \
     php-fpm \
     php-mysqli
 
-# download wordpress
-# RUN curl -O https://wordpress.org/latest.tar.gz
-# RUN tar -xzvf latest.tar.gz
+WORKDIR /var/www/html
+# # download wordpress
+RUN curl -O https://wordpress.org/latest.tar.gz
+RUN tar -xzvf latest.tar.gz --strip-components=1
 
 # Install WP-CLI for config wordpress
 RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
@@ -19,8 +20,6 @@ RUN chmod +x wp-cli.phar
 RUN mv wp-cli.phar /usr/local/bin/wp-cli
 
 COPY ./install_wordpress.sh /usr/local/bin
-WORKDIR /var/www/html
-# RUN install_wordpress.sh
 
 # listen on all interfaces
 RUN sed -i "s/127\.0\.0\.1\:9000/9000/g" /etc/php8/php-fpm.d/www.conf
